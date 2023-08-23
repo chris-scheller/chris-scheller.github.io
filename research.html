@@ -8,9 +8,6 @@
   <title>Chris Gu - Research</title>
   <style>
     html {
-      line-height: 1.5;
-      font-family: Georgia, serif;
-      font-size: 20px;
       color: #1a1a1a;
       background-color: #fdfdfd;
     }
@@ -29,10 +26,16 @@
     @media (max-width: 600px) {
       body {
         font-size: 0.9em;
-        padding: 1em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
       }
     }
     @media print {
+      html {
+        background-color: white;
+      }
       body {
         background-color: transparent;
         color: black;
@@ -82,9 +85,10 @@
       color: #606060;
     }
     code {
-      font-family: Menlo, Monaco, 'Lucida Console', Consolas, monospace;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
+      hyphens: manual;
     }
     pre {
       margin: 1em 0;
@@ -135,19 +139,27 @@
     #TOC li {
       list-style: none;
     }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
     #TOC a:not(:hover) {
       text-decoration: none;
     }
     code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    span.underline{text-decoration: underline;}
-    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
   </style>
-  <!--[if lt IE 9]>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
-  <![endif]-->
   <meta name="description" content="Chris Gu's webpage">
   <meta name="keywords" content="Chris Gu,Georgia Tech">
   <meta name="robots" content="noindex, nofollow, none, noarchive, nocache, nosnippet, noodp, noydir, notranslate, noimageindex">
@@ -156,6 +168,9 @@
   <link rel="stylesheet" type="text/css" href="assets/main.css">
   <link rel="stylesheet" type="text/css" href="assets/academicons.css">
   <link rel="stylesheet" type="text/css" href="assets/style.css">
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
 </head>
 <body>
 <div class="container">
@@ -209,15 +224,36 @@
 <h1 class="title">Chris Gu - Research</h1>
 <p class="author">Chris Gu</p>
 </header>
-<h2 id="published-and-in-process-papers">PUBLISHED AND IN-PROCESS PAPERS</h2>
+<h2 id="published-and-in-process-papers">PUBLISHED AND IN-PROCESS
+PAPERS</h2>
 <ul>
-<li><p><strong>Consumer Online Search with Partially Revealed Information</strong>, with Yike Wang. Management Science, vol. 68, no. 6, pp. 4215-4235, Jun. 2022. <a href="https://www.ssrn.com/abstract=3823988">link</a></p></li>
-<li><p><strong>Consumer Tax Credits for EVs: Some Quasi-Experimental Evidence on Consumer Demand, Product Substitution, and Carbon Emissions</strong>, with Cheng He, Cem Ozturk and Pradeep Chintagunta. Management Science, forthcoming. <a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3917577">link</a></p></li>
-<li><p><strong>The End of the Express Road for Hybrid Vehicles: Can Goverments’ Green Product Incentives Backfire?</strong>, with Cheng He, Cem Ozturk and Jorge Silva-Risso. Marketing Science, vol. 40, no. 1, pp. 80–100, Jan. 2021. <a href="https://www.ssrn.com/abstract=3725073">link</a></p></li>
-<li><p><strong>Principal Component and Static Factor Analysis</strong>, with Jianfei Cao and Yike Wang. Macroeconomic Forecasting in the Era of Big Data ed. by Peter Fuleky, 2020, 229-266. Advanced Studies in Theoretical and Applied Econometrics, vol. 52, Springer, Cham.</p></li>
-<li><p><strong>Political Risk and Multinational Firms</strong> (Under Review)</p></li>
-<li><p><strong>Virtuous Cycles of Enterprise Systems Adoption</strong> (Under Review)</p></li>
-<li><p><strong>Dynamic Peer Influence in Crowdfunding Economy</strong> (Under Review)</p></li>
+<li><p><strong>Consumer Online Search with Partially Revealed
+Information</strong>, with Yike Wang. Management Science, vol. 68, no.
+6, pp. 4215-4235, Jun. 2022. <a
+href="https://www.ssrn.com/abstract=3823988">link</a></p></li>
+<li><p><strong>Understanding the Returns to Integrated Enterprise
+Systems: The Impacts of Agile and Phased Implementation
+Strategies</strong>, with Sinan Aral, Erik Brynjolfsson, Hongchang Wang,
+Dongjun Wu. MIS Quarterly, forthcoming.</p></li>
+<li><p><strong>Consumer Tax Credits for EVs: Some Quasi-Experimental
+Evidence on Consumer Demand, Product Substitution, and Carbon
+Emissions</strong>, with Cheng He, Cem Ozturk and Pradeep Chintagunta.
+Management Science, forthcoming. <a
+href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3917577">link</a></p></li>
+<li><p><strong>The End of the Express Road for Hybrid Vehicles: Can
+Goverments’ Green Product Incentives Backfire?</strong>, with Cheng He,
+Cem Ozturk and Jorge Silva-Risso. Marketing Science, vol. 40, no. 1, pp.
+80–100, Jan. 2021. <a
+href="https://www.ssrn.com/abstract=3725073">link</a></p></li>
+<li><p><strong>Principal Component and Static Factor Analysis</strong>,
+with Jianfei Cao and Yike Wang. Macroeconomic Forecasting in the Era of
+Big Data ed. by Peter Fuleky, 2020, 229-266. Advanced Studies in
+Theoretical and Applied Econometrics, vol. 52, Springer, Cham.</p></li>
+<li><p><strong>Heterogeneity in Network</strong> (Under Review)</p></li>
+<li><p><strong>Political Risk and Multinational Firms</strong> (Under
+Review)</p></li>
+<li><p><strong>Dynamic Peer Influence in Crowdfunding Economy</strong>
+(Under Review)</p></li>
 </ul>
 
 	</section>
