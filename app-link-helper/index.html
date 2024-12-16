@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Link Helper">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="manifest" href="manifest.json">
+    <title>Link Helper</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #f0f0f0;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .tab-button.active {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .panel {
+            display: none;
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .input-group input[type="text"],
+        .input-group textarea {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+
+        .tag-input-container {
+            border: 1px solid #ccc;
+            padding: 5px;
+            min-height: 40px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .tag-input {
+            border: none;
+            outline: none;
+            flex: 1;
+            min-width: 60px;
+            padding: 5px;
+        }
+
+        .tag {
+            background-color: #e9ecef;
+            padding: 5px 10px;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .tag.active {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .tag-remove {
+            margin-left: 5px;
+            cursor: pointer;
+            color: #dc3545;
+        }
+
+        .tag-suggestions {
+            position: absolute;
+            background: white;
+            border: 1px solid #ddd;
+            max-height: 150px;
+            overflow-y: auto;
+            display: none;
+            z-index: 1000;
+        }
+
+        .tag-suggestion {
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+
+        .tag-suggestion:hover {
+            background-color: #f8f9fa;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+
+            .tab-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(registration => console.log('ServiceWorker registration successful'))
+                .catch(err => console.log('ServiceWorker registration failed: ', err));
+        }
+    </script>
+</head>
+<body>
+    <div class="tab-buttons">
+        <button class="tab-button active" onclick="showPanel('create')">Create Task</button>
+        <button class="tab-button" onclick="showPanel('export')">Export Tasks</button>
+        <button class="tab-button" onclick="showPanel('remove')">Remove Tasks</button>
+    </div>
+
+    <div id="create-panel" class="panel active">
+        <div class="input-group">
+            <label>URL:</label>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="url_text" style="flex-grow: 0.8;">
+                <button onclick="pasteFromClipboard()" style="padding: 8px;">Paste</button>
+            </div>
+        </div>
+        <div class="input-group">
+            <label>Priority (0-5):</label>
+            <input type="range" id="priority" min="0" max="5" value="0">
+            <span id="priority-value">0</span>
+        </div>
+        <div class="input-group">
+            <label><input type="checkbox" id="expand"> Task Expand</label>
+        </div>
+        <div class="input-group">
+            <label>Expand Priority (0-5):</label>
+            <input type="range" id="expand_priority" min="0" max="5" value="0">
+            <span id="expand-priority-value">0</span>
+        </div>
+        <div class="input-group">
+            <label><input type="checkbox" id="skim">Skim</label>
+        </div>
+        <div class="input-group">
+            <label>Footnote:</label>
+            <textarea id="footnote"></textarea>
+        </div>
+        <div class="input-group">
+            <label>Tags:</label>
+            <div class="tag-input-container">
+                <div id="tags-container"></div>
+                <input type="text" class="tag-input" id="tag-input" placeholder="Type to add tags...">
+            </div>
+            <div id="tag-suggestions" class="tag-suggestions"></div>
+        </div>
+        <button onclick="saveTask()">Save</button>
+    </div>
+
+    <div id="export-panel" class="panel">
+        <div class="input-group">
+            <textarea id="export-data" readonly style="height: 300px;"></textarea>
+        </div>
+        <button onclick="copyToClipboard()">Copy</button>
+    </div>
+
+    <div id="remove-panel" class="panel">
+        <button onclick="eraseTasks()">Erase</button>
+    </div>
+
+    <script>
+        let db;
+        let currentTags = new Set();
+        let activeTags = new Set();
+        
+        // Initialize IndexedDB (using this instead of SQLite as it's the native browser database)
+        const request = indexedDB.open("TaskManagerDB", 3);
+        
+        request.onerror = (event) => {
+            console.error("Database error:", event.target.error);
+        };
+
+        request.onupgradeneeded = (event) => {
+            db = event.target.result;
+            if (!db.objectStoreNames.contains("tasks")) {
+                db.createObjectStore("tasks", { keyPath: "id" });
+            }
+            if (!db.objectStoreNames.contains("tags")) {
+                db.createObjectStore("tags", { keyPath: "id", autoIncrement: true });
+            }
+        };
+
+        request.onsuccess = (event) => {
+            db = event.target.result;
+            loadTags();
+            checkClipboard();
+            
+            // Add focus event listener to window
+            window.addEventListener('focus', checkClipboard);
+        };
+
+        async function pasteFromClipboard() {
+            try {
+                const text = await navigator.clipboard.readText();
+                if (text.includes('http://') || text.includes('https://')) {
+                    document.getElementById("url_text").value = text;
+                }
+            } catch (err) {
+                console.log("Clipboard access denied:", err);
+                // Fallback for iOS
+                document.getElementById("url_text").focus();
+                document.execCommand('paste');
+            }
+        }
+
+        async function checkClipboard() {
+            try {
+                const text = await navigator.clipboard.readText();
+                if (text.includes('http://') || text.includes('https://')) {
+                    document.getElementById("url_text").value = text;
+                }
+            } catch (err) {
+                console.log("Clipboard access denied");
+            }
+        }
+
+        function extractUrl(text) {
+            const urlRegex = /(https?:\/\/[^\s]+)/;
+            const match = text.match(urlRegex);
+            return match ? match[0] : null;
+        }
+
+        function showPanel(panelName) {
+            document.querySelectorAll('.panel').forEach(panel => panel.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(button => button.classList.remove('active'));
+            
+            document.getElementById(`${panelName}-panel`).classList.add('active');
+            document.querySelector(`button[onclick="showPanel('${panelName}')"]`).classList.add('active');
+            
+            if (panelName === 'export') {
+                loadTasks();
+            }
+        }
+
+        const prioritySlider = document.getElementById("priority");
+        const priorityValue = document.getElementById("priority-value");
+        prioritySlider.addEventListener("input", () => {
+            priorityValue.textContent = prioritySlider.value;
+        });
+
+        const expandPrioritySlider = document.getElementById("expand_priority");
+        const expandPriorityValue = document.getElementById("expand-priority-value");
+        expandPrioritySlider.addEventListener("input", () => {
+            expandPriorityValue.textContent = expandPrioritySlider.value;
+        });
+
+        const tagInput = document.getElementById("tag-input");
+        const tagSuggestions = document.getElementById("tag-suggestions");
+        let recentTags = [];
+
+        async function loadTags() {
+            const transaction = db.transaction(["tags"], "readonly");
+            const store = transaction.objectStore("tags");
+            const request = store.getAll();
+            
+            request.onsuccess = () => {
+                recentTags = request.result.map(tag => tag.name);
+                // Load existing tags as buttons
+                recentTags.forEach(tag => {
+                    if (!currentTags.has(tag)) {
+                        addTag(tag);
+                    }
+                });
+            };
+        }
+
+        tagInput.addEventListener("input", () => {
+            const value = tagInput.value.trim();
+            if (value) {
+                const suggestions = recentTags.filter(tag => 
+                    tag.toLowerCase().includes(value.toLowerCase()) && 
+                    !currentTags.has(tag)
+                );
+                
+                tagSuggestions.innerHTML = "";
+                suggestions.forEach(tag => {
+                    const div = document.createElement("div");
+                    div.className = "tag-suggestion";
+                    div.textContent = tag;
+                    div.onclick = () => addTag(tag);
+                    tagSuggestions.appendChild(div);
+                });
+                tagSuggestions.style.display = suggestions.length ? "block" : "none";
+            } else {
+                tagSuggestions.style.display = "none";
+            }
+        });
+
+        tagInput.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") {
+                const value = tagInput.value.trim();
+                if (value) {
+                    addTag(value);
+                }
+            }
+        });
+
+        function addTag(tag) {
+            if (!currentTags.has(tag)) {
+                currentTags.add(tag);
+                const tagElement = document.createElement("div");
+                tagElement.className = "tag";
+                tagElement.innerHTML = `
+                    ${tag}
+                    <span class="tag-remove" onclick="removeTag('${tag}', this.parentElement)">×</span>
+                `;
+                tagElement.onclick = (e) => {
+                    if (!e.target.classList.contains('tag-remove')) {
+                        toggleTagActive(tag, tagElement);
+                    }
+                };
+                document.getElementById("tags-container").appendChild(tagElement);
+                
+                // Save new tag to database if it's not in recentTags
+                if (!recentTags.includes(tag)) {
+                    const transaction = db.transaction(["tags"], "readwrite");
+                    const store = transaction.objectStore("tags");
+                    store.add({ name: tag });
+                    recentTags.push(tag);
+                }
+            }
+            tagInput.value = "";
+            tagSuggestions.style.display = "none";
+        }
+
+        function toggleTagActive(tag, element) {
+            if (activeTags.has(tag)) {
+                activeTags.delete(tag);
+                element.classList.remove('active');
+            } else {
+                activeTags.add(tag);
+                element.classList.add('active');
+            }
+        }
+
+        function removeTag(tag, element) {
+            currentTags.delete(tag);
+            activeTags.delete(tag);
+            element.remove();
+        }
+
+        function saveTask() {
+            // Create timestamp in YYYYMMDD-HHmmss format
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            const taskId = `${year}${month}${day}-${hours}${minutes}${seconds}`;
+
+            const task = {
+                id: taskId,
+                url_text: document.getElementById("url_text").value,
+                priority: parseInt(document.getElementById("priority").value),
+                expand: document.getElementById("expand").checked,
+                expand_priority: parseInt(document.getElementById("expand_priority").value),
+                skim: document.getElementById("skim").checked,
+                footnote: document.getElementById("footnote").value,
+                tags: Array.from(activeTags).join(","),
+                timestamp: now.toISOString()
+            };
+
+            const transaction = db.transaction(["tasks"], "readwrite");
+            const store = transaction.objectStore("tasks");
+            store.put(task);
+
+            // Clear form
+            document.getElementById("url_text").value = "";
+            document.getElementById("priority").value = "0";
+            priorityValue.textContent = "0";
+            document.getElementById("expand").checked = false;
+            document.getElementById("expand_priority").value = "0";
+            expandPriorityValue.textContent = "0";
+            document.getElementById("skim").checked = false;
+            document.getElementById("footnote").value = "";
+            // Reset active tags
+            document.querySelectorAll('.tag.active').forEach(tag => {
+                tag.classList.remove('active');
+            });
+            activeTags.clear();
+        }
+
+        function loadTasks() {
+            const transaction = db.transaction(["tasks"], "readonly");
+            const store = transaction.objectStore("tasks");
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                const tasks = {};
+                request.result.forEach(task => {
+                    tasks[task.id] = task;
+                });
+                document.getElementById("export-data").value = JSON.stringify(tasks, null, 2);
+            };
+        }
+
+        function copyToClipboard() {
+            const exportData = document.getElementById("export-data");
+            exportData.select();
+            document.execCommand("copy");
+        }
+
+        function eraseTasks() {
+            if (confirm("Are you sure you want to erase all tasks?")) {
+                const transaction = db.transaction(["tasks"], "readwrite");
+                const store = transaction.objectStore("tasks");
+                store.clear();
+                loadTasks();
+            }
+        }
+    </script>
+</body>
+</html>
