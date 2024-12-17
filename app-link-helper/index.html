@@ -131,6 +131,11 @@
             background-color: #0056b3;
         }
 
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         @media (max-width: 600px) {
             body {
                 padding: 10px;
@@ -302,7 +307,8 @@
             const request = store.getAll();
             
             request.onsuccess = () => {
-                recentTags = request.result.map(tag => tag.name);
+                // Sort tags alphabetically
+                recentTags = request.result.map(tag => tag.name).sort();
                 // Load existing tags as buttons
                 recentTags.forEach(tag => {
                     if (!currentTags.has(tag)) {
@@ -315,10 +321,10 @@
         tagInput.addEventListener("input", () => {
             const value = tagInput.value.trim();
             if (value) {
-                const suggestions = recentTags.filter(tag => 
-                    tag.toLowerCase().includes(value.toLowerCase()) && 
-                    !currentTags.has(tag)
-                );
+                // Sort filtered suggestions alphabetically
+                const suggestions = recentTags
+                    .filter(tag => tag.toLowerCase().includes(value.toLowerCase()) && !currentTags.has(tag))
+                    .sort();
                 
                 tagSuggestions.innerHTML = "";
                 suggestions.forEach(tag => {
@@ -458,6 +464,30 @@
                 loadTasks();
             }
         }
+
+        // Add event listener to URL input to control Save button state
+        document.getElementById("url_text").addEventListener("input", function() {
+            const saveButton = document.querySelector('button[onclick="saveTask()"]');
+            saveButton.disabled = !this.value.trim();
+            
+            // Optional: Add visual feedback for disabled state
+            if (this.value.trim()) {
+                saveButton.style.opacity = "1";
+                saveButton.style.cursor = "pointer";
+            } else {
+                saveButton.style.opacity = "0.5";
+                saveButton.style.cursor = "not-allowed";
+            }
+        });
+
+        // Add initial state check when page loads
+        document.addEventListener("DOMContentLoaded", function() {
+            const saveButton = document.querySelector('button[onclick="saveTask()"]');
+            const urlInput = document.getElementById("url_text");
+            saveButton.disabled = !urlInput.value.trim();
+            saveButton.style.opacity = "0.5";
+            saveButton.style.cursor = "not-allowed";
+        });
     </script>
 </body>
 </html>
