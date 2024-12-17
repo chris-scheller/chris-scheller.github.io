@@ -247,12 +247,14 @@
                 const text = await navigator.clipboard.readText();
                 if (text.includes('http://') || text.includes('https://')) {
                     document.getElementById("url_text").value = text;
+                    document.getElementById("url_text").dispatchEvent(new Event('input'));
                 }
             } catch (err) {
                 console.log("Clipboard access denied:", err);
                 // Fallback for iOS
                 document.getElementById("url_text").focus();
                 document.execCommand('paste');
+                document.getElementById("url_text").dispatchEvent(new Event('input'));
             }
         }
 
